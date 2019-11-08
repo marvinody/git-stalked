@@ -14,8 +14,8 @@ export async function get(req, res) {
     res.end(error_message)
     return
   }
-  const repo_path = './test'
-  // const repo_path = await mktemp_dir()
+  // const repo_path = './test'
+  const repo_path = await mktemp_dir()
   try {
     if (!await is_valid_repo(user, repo)) {
       throw new Error('404')
