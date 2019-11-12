@@ -1,12 +1,13 @@
-import sirv from 'sirv';
-import polka from 'polka';
-import compression from 'compression';
 import * as sapper from '@sapper/server';
-
+import compression from 'compression';
+import dotenv from 'dotenv';
+import express from 'express';
+import sirv from 'sirv';
+dotenv.config()
 const { PORT, NODE_ENV } = process.env;
 const dev = NODE_ENV === 'development';
 
-polka() // You can also use Express
+express() // You can also use Express
 	.use(
 		compression({ threshold: 0 }),
 		sirv('static', { dev }),
