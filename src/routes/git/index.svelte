@@ -9,7 +9,6 @@
   $: notBlank = name !== "";
   $: gucci = !loading && exists;
   $: notGucci = !loading && !exists && notBlank;
-  console.log(process.env);
   const ontype = _.debounce(async () => {
     counter++;
     try {
