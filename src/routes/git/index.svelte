@@ -1,14 +1,19 @@
 <script>
+  import { stores, goto } from "@sapper/app";
+  const { session } = stores();
+
   import _ from "lodash";
   import axios from "axios";
   let name = "";
   let counter = 0;
   let exists = false;
-
+  // boolean true if it exists
+  $: loggedIn = !!$session.tokens.github;
   $: loading = counter !== 0;
   $: notBlank = name !== "";
   $: gucci = !loading && exists;
   $: notGucci = !loading && !exists && notBlank;
+
   const ontype = _.debounce(async () => {
     counter++;
     try {
@@ -66,10 +71,14 @@
 <h1>Git Analysis</h1>
 
 <div class="container">
-  <span>
-    <label for="username">Username:</label>
-    <input bind:value={name} name="username" on:keypress={ontype} />
-  </span>
+  {#if loggedIn}
+    <span>
+      <label for="username">Username:</label>
+      <input bind:value={name} name="username" on:keypress={ontype} />
+    </span>
+  {:else}
+    <a href="/auth/github">Sign in with Github</a>
+  {/if}
   <span class="lds-dual-ring hide" class:loading />
   <span class:gucci class="hide">Gucci</span>
   <span class:notGucci class="hide">Not Gucci</span>
