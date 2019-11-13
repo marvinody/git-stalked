@@ -19,7 +19,14 @@ express() // You can also use Express
 		}),
 		compression({ threshold: 0 }),
 		sirv('static', { dev }),
-		sapper.middleware()
+		// load session for any page component to see
+		sapper.middleware({
+			session: (req, res) => ({
+				tokens: {
+					github: req.session.github_token
+				}
+			})
+		})
 	)
 	.listen(PORT, err => {
 		if (err) console.log('error', err);
