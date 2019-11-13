@@ -11,7 +11,7 @@ export async function get(req, res, next) {
     })
     const response = qs.parse(data)
     req.session.github_token = response.access_token
-    res.redirect('/auth/tokens.json')
+    res.redirect('/git/')
   } catch (err) {
     console.error(err)
     next(err)
