@@ -7,6 +7,7 @@
   let name = "";
   let counter = 0;
   let exists = false;
+  let repos = [];
   // boolean true if it exists
   $: loggedIn = !!$session.tokens.github;
   $: loading = counter !== 0;
@@ -19,6 +20,10 @@
     exists = await api.usernameExists(name);
     counter--;
   }, 500);
+
+  const stalk = async () => {
+    repos = await api.getRepos(name);
+  };
 </script>
 
 <style>
@@ -62,15 +67,26 @@
 <h1>Git Analysis</h1>
 
 <div class="container">
-  {#if loggedIn}
-    <span>
-      <label for="username">Username:</label>
-      <input bind:value={name} name="username" on:keypress={ontype} />
-    </span>
-  {:else}
-    <a href="/auth/github">Sign in with Github</a>
-  {/if}
-  <span class="lds-dual-ring hide" class:loading />
-  <span class:gucci class="hide">Gucci</span>
-  <span class:notGucci class="hide">Not Gucci</span>
+  <div>
+    {#if loggedIn}
+      <span>
+        <label for="username">Username:</label>
+        <input bind:value={name} name="username" on:keypress={ontype} />
+      </span>
+    {:else}
+      <a href="/auth/github">Sign in with Github</a>
+    {/if}
+    <span class="lds-dual-ring hide" class:loading />
+    <span class:gucci class="hide">Gucci</span>
+    <span class:notGucci class="hide">Not Gucci</span>
+  </div>
+  <div class:hide={!loggedIn}>
+    <button disabled={!exists} on:click={stalk}>Stalk Them!</button>
+
+    <ul>
+      {#each repos as repo}
+        <li>{repo.name}</li>
+      {/each}
+    </ul>
+  </div>
 </div>
