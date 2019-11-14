@@ -19,5 +19,17 @@ export const GithubApi = (token) => {
         return false;
       }
     },
+    getRepos: async (username) => {
+      try {
+        // grab all their repos
+        const { data: repos } = await ax.get(`users/${username}/repos`);
+        // and just give them
+        return repos
+      } catch (err) {
+        // otherwise no good
+        console.error(err)
+        return []
+      }
+    }
   }
 }
