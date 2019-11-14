@@ -3,7 +3,7 @@
   const { session } = stores();
 
   import _ from "lodash";
-  import axios from "axios";
+  import { GithubApi } from "../../utils";
   let name = "";
   let counter = 0;
   let exists = false;
@@ -11,22 +11,13 @@
   $: loggedIn = !!$session.tokens.github;
   $: loading = counter !== 0;
   $: notBlank = name !== "";
-  $: gucci = !loading && exists;
+  $: gucci = !loading && exists && notBlank;
   $: notGucci = !loading && !exists && notBlank;
-
+  $: api = GithubApi($session.tokens.github);
   const ontype = _.debounce(async () => {
     counter++;
-    try {
-      // just a head so it'll be quick
-      await axios.head(`https://api.github.com/users/${name}`);
-      // and if we don't error out, we know it's gucci
-      exists = true;
-    } catch (err) {
-      // otherwise no good
-      exists = false;
-    } finally {
-      counter--;
-    }
+    exists = await api.usernameExists(name);
+    counter--;
   }, 500);
 </script>
 
