@@ -4,7 +4,7 @@ export const GithubApi = (token) => {
   const ax = axios.create({
     baseURL: 'https://api.github.com/',
     timeout: 5000,
-    headers: { 'Authorization': `token ${token}` }
+    headers: { Authorization: `token ${token}` }
   });
 
   return {
@@ -27,6 +27,16 @@ export const GithubApi = (token) => {
         return repos
       } catch (err) {
         // otherwise no good
+        console.error(err)
+        return []
+      }
+    },
+    getEmails: user => async repo => {
+      try {
+        // axios (not ax) because we want from OUR server, not github
+        const { data: emails } = await axios.get(`/git/${user}/${repo}.json`)
+        return emails
+      } catch (err) {
         console.error(err)
         return []
       }

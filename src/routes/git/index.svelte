@@ -7,7 +7,7 @@
   let name = "";
   let counter = 0;
   let exists = false;
-  let repos = [];
+  let repoEmails = [];
   // boolean true if it exists
   $: loggedIn = !!$session.tokens.github;
   $: loading = counter !== 0;
@@ -22,7 +22,22 @@
   }, 500);
 
   const stalk = async () => {
-    repos = await api.getRepos(name);
+    // reset to empty
+    repoEmails = [];
+    const repos = await api.getRepos(name);
+    const emailFetcher = api.getEmails(name);
+    name = "";
+    repos.forEach(async repo => {
+      const emails = await emailFetcher(repo.name);
+      repoEmails = [
+        ...repoEmails,
+        {
+          repo,
+          emails
+        }
+      ];
+      console.log({ repoEmails });
+    });
   };
 </script>
 
@@ -52,6 +67,7 @@
   .container {
     display: flex;
     align-items: center;
+    flex-direction: column;
   }
   .loading,
   .gucci,
@@ -79,14 +95,18 @@
     <span class="lds-dual-ring hide" class:loading />
     <span class:gucci class="hide">Gucci</span>
     <span class:notGucci class="hide">Not Gucci</span>
+    <button disabled={!exists} class:hide={!loggedIn} on:click={stalk}>
+      Stalk Them!
+    </button>
   </div>
-  <div class:hide={!loggedIn}>
-    <button disabled={!exists} on:click={stalk}>Stalk Them!</button>
-
-    <ul>
-      {#each repos as repo}
-        <li>{repo.name}</li>
-      {/each}
-    </ul>
+  <div class:hide={!loggedIn} class="info-container">
+    {#each repoEmails as repoEmail}
+      <h3>{repoEmail.repo.name}</h3>
+      <ul>
+        {#each repoEmail.emails as email}
+          <li>{email.name} - {email.email}</li>
+        {/each}
+      </ul>
+    {/each}
   </div>
 </div>
