@@ -1,42 +1,8 @@
 import axios from 'axios'
 import { exec } from 'child-process-promise'
-const error_message = 'Invalid repo or user (or insufficient permissions)'
-export async function get(req, res) {
-  const { user, repo } = req.params
-  if (user.includes('.') || user.includes('/')) {
-    res.statusCode = 403
-    res.end(error_message)
-    return
-  }
-
-  if (repo.includes('.') || repo.includes('/')) {
-    res.statusCode = 403
-    res.end(error_message)
-    return
-  }
-  // const repo_path = './test'
-  const repo_path = await mktemp_dir()
-  try {
-    if (!await is_valid_repo(user, repo)) {
-      throw new Error('404')
-    }
-    await download_repo(user, repo, repo_path)
-
-    const emails = await get_emails_from_repo(repo_path)
-
-    res.writeHead(200, {
-      'Content-Type': 'application/json'
-    });
-    res.end(JSON.stringify(emails))
-  } catch (err) {
-    res.statusCode = 404
-    res.end(error_message)
-  } finally {
-    remove_repo(repo_path)
-
-  }
-
-}
+import { Email, Repo } from '../../../db'
+const GIT_ERROR_MSG = 'Invalid repo or user (or insufficient permissions)'
+const SQL_ERROR_MSG = 'Oops, something broke! try again later'
 
 const is_valid_repo = async (user, repo) => {
   try {
@@ -48,7 +14,7 @@ const is_valid_repo = async (user, repo) => {
 }
 
 const get_emails_from_repo = async (repo_path) => {
-  const delim = " - "
+  const delim = ' - '
   const cmd = await exec(`cd ${repo_path} && git log --pretty=format:"%an${delim}%ae" | sort | uniq`)
   if (cmd.stderr) throw cmd.stderr
 
@@ -75,3 +41,63 @@ const mktemp_dir = async () => {
 const remove_repo = (repo_path) => {
   return exec(`rm -rf ${repo_path}`)
 }
+
+const send_new_emails = async (user, repo, res) => {
+  const repo_path = await mktemp_dir()
+  try {
+    if (!await is_valid_repo(user, repo.name)) {
+      throw new Error('404')
+    }
+    await download_repo(user, repo.name, repo_path)
+
+    const raw_emails = await get_emails_from_repo(repo_path)
+
+    const emails = await Email.bulkCreate(raw_emails)
+    repo.setEmails(emails)
+
+    res.json(raw_emails)
+  } catch (err) {
+    console.error(err)
+    res.status(404).send(GIT_ERROR_MSG)
+  } finally {
+    remove_repo(repo_path)
+  }
+}
+
+export async function get(req, res) {
+  const { user, repo: repo_name } = req.params
+  if (user.includes('.') || user.includes('/')) {
+    res.status(403).send(GIT_ERROR_MSG)
+    return
+  }
+
+  if (repo_name.includes('.') || repo_name.includes('/')) {
+    res.status(403).send(GIT_ERROR_MSG)
+    return
+  }
+  try {
+    const [repo, created] = await Repo.findOrCreate({
+      where: {
+        user, name: repo_name,
+      },
+    })
+
+    // did it exist before? Maybe just return the emails we have already
+    if (!created) {
+      const emails = await repo.getEmails()
+      res.json(emails.map(email => ({
+        name: email.name,
+        email: email.email,
+      })))
+      return
+    }
+    // if it hasn't existed, continue and fetch new stuff
+    send_new_emails(user, repo, res)
+
+  } catch (err) {
+    console.error(err)
+    res.status(500).end(SQL_ERROR_MSG)
+  }
+
+}
+
