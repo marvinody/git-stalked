@@ -9,6 +9,7 @@
     "start": "node __sapper__/build",
     "cy:run": "cypress run",
     "cy:open": "cypress open",
+    "seed": "webpack --config seed.webpack.config.js",
     "test": "run-p --race dev cy:run"
   },
   "dependencies": {
