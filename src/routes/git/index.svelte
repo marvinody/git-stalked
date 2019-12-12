@@ -74,6 +74,9 @@
   .notGucci {
     display: inline-block;
   }
+  h1 {
+    text-align: center;
+  }
 </style>
 
 <svelte:head>
